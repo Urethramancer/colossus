@@ -2,8 +2,14 @@ package main
 
 import (
 	"errors"
+	"time"
+
+	"github.com/go-chi/chi/middleware"
+
+	"github.com/go-chi/chi"
 
 	"github.com/Urethramancer/colossus/osenv"
+	"github.com/Urethramancer/daemon"
 	"github.com/Urethramancer/signor/env"
 	"github.com/Urethramancer/signor/log"
 	"github.com/Urethramancer/signor/opt"
@@ -33,20 +39,47 @@ func (cmd *CmdServe) Run(in []string) error {
 		return errors.New(opt.ErrorUsage)
 	}
 
-	dbhost := osenv.Get("DBHOST", cmd.DBHost)
-	dbport := osenv.Get("DBPORT", cmd.DBPort)
-	dbname := osenv.Get("DBNAME", cmd.DBName)
-	dbuser := osenv.Get("DBUSER", cmd.DBUser)
-	dbpass := osenv.Get("DBPASS", cmd.DBPass)
+	ws := &WebServer{}
+	ws.dbhost = osenv.Get("DBHOST", cmd.DBHost)
+	ws.dbport = osenv.Get("DBPORT", cmd.DBPort)
+	ws.dbname = osenv.Get("DBNAME", cmd.DBName)
+	ws.dbuser = osenv.Get("DBUSER", cmd.DBUser)
+	ws.dbpass = osenv.Get("DBPASS", cmd.DBPass)
 	ssl := env.Get("DB_SSL", cmd.SSL)
 	if ssl == "" {
 		ssl = cmd.SSL
 	}
 
-	ip := osenv.Get("WEBIP", cmd.IP)
-	port := osenv.Get("WEBPORT", cmd.Port)
+	ws.ip = osenv.Get("WEBIP", cmd.IP)
+	ws.port = osenv.Get("WEBPORT", cmd.Port)
+
+	ws.L = log.Default.TMsg
+	ws.E = log.Default.TErr
+
+	ws.IdleTimeout = time.Second * 30
+	ws.ReadTimeout = time.Second * 10
+	ws.WriteTimeout = time.Second * 10
+
+	ws.api = chi.NewRouter()
+	ws.api.Use(middleware.NoCache)
+	ws.api.Use(addCORS)
+	ws.api.Use(middleware.RealIP)
+	ws.api.Use(middleware.RequestID)
+	ws.api.Use(middleware.Timeout(time.Second * 10))
+	ws.api.NotFound(notfound)
+	ws.api.Route("/", func(r chi.Router) {
+		r.Options("/", preflight)
+	})
+
+	ws.web = chi.NewRouter()
+	ws.web.Get("/", static)
+	ws.web.Get("/api", ws.api.ServeHTTP)
 
 	m := log.Default.Msg
-	m("DBHost: %s\nDBPort: %s\nDBName: %s\nSSL: %s\nDBUser: %s\nDBPass: %s\nIP: %s\nPort: %s\n", dbhost, dbport, dbname, ssl, dbuser, dbpass, ip, port)
+	m("%+v", ws)
+
+	ws.Start()
+	<-daemon.BreakChannel()
+	ws.Stop()
 	return nil
 }
