@@ -11,6 +11,7 @@ var options struct {
 	opt.DefaultHelp
 	Init  CmdInit  `command:"init" help:"Initialise database and default admin user."`
 	Serve CmdServe `command:"serve" help:"Start the server."`
+	User  CmdUser  `command:"user" help:"User management."`
 }
 
 func main() {
