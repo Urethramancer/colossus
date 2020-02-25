@@ -16,7 +16,7 @@ func apierror(w http.ResponseWriter, msg string, code int) {
 	w.Write([]byte(s))
 }
 
-func notfound(w http.ResponseWriter, r *http.Request) {
+func apinotfound(w http.ResponseWriter, r *http.Request) {
 	apierror(w, "Unknown endpoint.", 404)
 }
 
