@@ -4,21 +4,20 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-chi/chi/middleware"
-
-	"github.com/go-chi/chi"
-
 	"github.com/Urethramancer/colossus/osenv"
 	"github.com/Urethramancer/daemon"
 	"github.com/Urethramancer/signor/env"
 	"github.com/Urethramancer/signor/log"
 	"github.com/Urethramancer/signor/opt"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 // CmdServe options.
 type CmdServe struct {
 	opt.DefaultHelp
 
+	ConfigPath string `short:"C" long:"configpath" help:"Path to configuration files." default:"config"`
 	// Database options
 	DBHost string `short:"H" long:"dbhost" help:"Database host to connect to." default:"localhost"`
 	DBPort string `short:"p" long:"dbport" help:"Database port to connect to." default:"5432"`
@@ -53,6 +52,7 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.ip = osenv.Get("WEBIP", cmd.IP)
 	ws.port = osenv.Get("WEBPORT", cmd.Port)
 
+	ws.Logger = log.Default
 	ws.L = log.Default.TMsg
 	ws.E = log.Default.TErr
 
@@ -61,17 +61,22 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.WriteTimeout = time.Second * 10
 
 	ws.api = chi.NewRouter()
-	ws.api.Use(middleware.NoCache)
-	ws.api.Use(addCORS)
-	ws.api.Use(middleware.RealIP)
-	ws.api.Use(middleware.RequestID)
-	ws.api.Use(middleware.Timeout(time.Second * 10))
-	ws.api.NotFound(notfound)
+	ws.api.Use(
+		middleware.NoCache,
+		addCORS,
+		middleware.Timeout(time.Second*10),
+	)
+	ws.api.NotFound(apinotfound)
 	ws.api.Route("/", func(r chi.Router) {
 		r.Options("/", preflight)
 	})
 
 	ws.web = chi.NewRouter()
+	ws.web.Use(
+		middleware.RealIP,
+		middleware.RequestID,
+		ws.addLogger,
+	)
 	ws.web.Get("/", static)
 	ws.web.Get("/api", ws.api.ServeHTTP)
 
