@@ -9,6 +9,6 @@ cache:
         - $GOPATH/pkg
 
 install:
-    - github.com/go-chi/chi
+    - go get github.com/go-chi/chi
     - go get github.com/Urethramancer/daemon
     - go get github.com/Urethramancer/signor
