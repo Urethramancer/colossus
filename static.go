@@ -35,5 +35,5 @@ func (ws *WebServer) servefile(w http.ResponseWriter, r *http.Request, name stri
 		w.Header().Set("Content-Type", mime.TypeByExtension(".txt"))
 	}
 
-	http.ServeContent(w, r, name, time.Now(), f)
+	http.ServeContent(w, r, name, time.Time{}, f)
 }
