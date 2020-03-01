@@ -2,6 +2,12 @@ language: go
 
 go:
     - 1.14
+
+cache:
+    directories:
+        - $GOPATH/src
+        - $GOPATH/pkg
+
 install:
     - github.com/go-chi/chi
     - go get github.com/Urethramancer/daemon
