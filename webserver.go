@@ -24,13 +24,19 @@ type WebServer struct {
 	dbname string
 	dbuser string
 	dbpass string
+	ssl    string
 	// db     *anthropoi.DBM
 
-	ip   string
-	port string
+	ip         string
+	port       string
+	staticpath string
 
+	// api endpoints
 	api *chi.Mux
+	// web server root path
 	web *chi.Mux
+	// share folders and files
+	share *chi.Mux
 }
 
 // Start serving.
@@ -74,4 +80,11 @@ func (ws *WebServer) Stop() {
 
 	ws.Wait()
 	// ws.db.Close()
+}
+
+func (ws *WebServer) wout(w http.ResponseWriter, s string) {
+	n, err := w.Write([]byte(s))
+	if err != nil {
+		ws.Logger.TErr("Error: wrote %d bytes: %s", n, err.Error())
+	}
 }

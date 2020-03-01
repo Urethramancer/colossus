@@ -29,6 +29,7 @@ type CmdServe struct {
 	// Webserver options
 	IP      string `short:"i" long:"ip" help:"IP address to bind to." default:"127.0.0.1"`
 	Port    string `short:"w" long:"port" help:"Port to run on." default:"8000"`
+	Static  string `short:"S" long:"staticpath" help:"Path to static files." default:"static"`
 	Domains string `short:"d" long:"domains" help:"Comma-separated list of domains to respond to."`
 }
 
@@ -44,13 +45,11 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.dbname = osenv.Get("DBNAME", cmd.DBName)
 	ws.dbuser = osenv.Get("DBUSER", cmd.DBUser)
 	ws.dbpass = osenv.Get("DBPASS", cmd.DBPass)
-	ssl := env.Get("DB_SSL", cmd.SSL)
-	if ssl == "" {
-		ssl = cmd.SSL
-	}
+	ws.ssl = env.Get("DB_SSL", cmd.SSL)
 
 	ws.ip = osenv.Get("WEBIP", cmd.IP)
 	ws.port = osenv.Get("WEBPORT", cmd.Port)
+	ws.staticpath = osenv.Get("STATICPATH", cmd.Static)
 
 	ws.Logger = log.Default
 	ws.L = log.Default.TMsg
@@ -71,17 +70,31 @@ func (cmd *CmdServe) Run(in []string) error {
 		r.Options("/", preflight)
 	})
 
+	ws.share = chi.NewRouter()
+	ws.share.Use(
+		middleware.NoCache,
+		middleware.RealIP,
+		middleware.RequestID,
+		ws.addLogger,
+	)
+	// ws.share.Route("/", func(r chi.Router) {
+	// 	r.Get("/", ws.files)
+	// })
+
 	ws.web = chi.NewRouter()
 	ws.web.Use(
 		middleware.RealIP,
 		middleware.RequestID,
 		ws.addLogger,
+		addHTMLHeaders,
 	)
-	ws.web.Get("/", static)
-	ws.web.Get("/api", ws.api.ServeHTTP)
 
-	m := log.Default.Msg
-	m("%+v", ws)
+	ws.web.Get("/api", ws.api.ServeHTTP)
+	ws.web.Get("/files", ws.files)
+	ws.web.Get("/", ws.static)
+	ws.web.Route("/{page}", func(r chi.Router) {
+		r.Get("/*", ws.static)
+	})
 
 	ws.Start()
 	<-daemon.BreakChannel()
