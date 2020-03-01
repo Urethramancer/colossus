@@ -1,0 +1,8 @@
+language: go
+
+go:
+    - 1.14
+install:
+    - github.com/go-chi/chi
+    - go get github.com/Urethramancer/daemon
+    - go get github.com/Urethramancer/signor
