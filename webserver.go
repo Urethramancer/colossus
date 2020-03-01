@@ -27,8 +27,9 @@ type WebServer struct {
 	ssl    string
 	// db     *anthropoi.DBM
 
-	ip         string
-	port       string
+	ip   string
+	port string
+	// staticpath is for files retrieved by the client (HTML, CSS, images, JS).
 	staticpath string
 
 	// api endpoints
@@ -37,6 +38,11 @@ type WebServer struct {
 	web *chi.Mux
 	// share folders and files
 	share *chi.Mux
+
+	// users are loaded into this
+	users map[string]*User
+	// shares are loaded into this
+	shares map[string]*Share
 }
 
 // Start serving.
