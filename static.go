@@ -18,9 +18,7 @@ func (ws *WebServer) static(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ws *WebServer) servefile(w http.ResponseWriter, r *http.Request, name string) {
-	ws.L("%s", name)
 	fn := filepath.Join(ws.staticpath, name)
-	ws.L("%s", fn)
 	f, err := os.Open(fn)
 	if err != nil {
 		http.NotFound(w, r)
