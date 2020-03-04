@@ -91,6 +91,6 @@ func (ws *WebServer) Stop() {
 func (ws *WebServer) wout(w http.ResponseWriter, s string) {
 	n, err := w.Write([]byte(s))
 	if err != nil {
-		ws.Logger.TErr("Error: wrote %d bytes: %s", n, err.Error())
+		ws.E("Error: wrote %d bytes: %s", n, err.Error())
 	}
 }
