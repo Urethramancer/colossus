@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"net/http"
@@ -21,6 +21,6 @@ type Share struct {
 	Dir bool
 }
 
-func (ws *WebServer) files(w http.ResponseWriter, r *http.Request) {
+func (ws *Server) Files(w http.ResponseWriter, r *http.Request) {
 	ws.wout(w, "No files.")
 }

@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"mime"
@@ -8,17 +8,17 @@ import (
 	"time"
 )
 
-func (ws *WebServer) static(w http.ResponseWriter, r *http.Request) {
+func (ws *Server) Static(w http.ResponseWriter, r *http.Request) {
 	page := r.URL.Path
 	if page == "/" {
 		page = "/index.html"
 	}
 
-	ws.servefile(w, r, page)
+	ws.ServeFile(w, r, page)
 }
 
-func (ws *WebServer) servefile(w http.ResponseWriter, r *http.Request, name string) {
-	fn := filepath.Join(ws.staticpath, name)
+func (ws *Server) ServeFile(w http.ResponseWriter, r *http.Request, name string) {
+	fn := filepath.Join(ws.StaticPath, name)
 	f, err := os.Open(fn)
 	if err != nil {
 		http.NotFound(w, r)

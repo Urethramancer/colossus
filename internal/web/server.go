@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"context"
@@ -8,49 +8,56 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Urethramancer/colossus/internal/acc"
 	"github.com/Urethramancer/signor/log"
 	"github.com/go-chi/chi"
 )
 
-// WebServer main structure.
-type WebServer struct {
+// Server main structure.
+type Server struct {
 	sync.RWMutex
 	sync.WaitGroup
 	log.LogShortcuts
 	http.Server
 
-	dbhost string
-	dbport string
-	dbname string
-	dbuser string
-	dbpass string
-	ssl    string
+	// DBHost address.
+	DBHost string
+	// DBPort number.
+	DBPort string
+	// DBName to connect to.
+	DBName string
+	// DBUser to connect as.
+	DBUser string
+	// DBPass to authenticate with.
+	DBPass string
+	// SSL enabled or disabled.
+	SSL string
 	// db     *anthropoi.DBM
 
-	ip   string
-	port string
+	IP   string
+	Port string
 	// staticpath is for files retrieved by the client (HTML, CSS, images, JS).
-	staticpath string
+	StaticPath string
 
 	// api endpoints
-	api *chi.Mux
+	API *chi.Mux
 	// web server root path
-	web *chi.Mux
+	Web *chi.Mux
 	// share folders and files
-	share *chi.Mux
+	Share *chi.Mux
 
 	// users are loaded into this
-	users map[string]*User
+	users map[string]*acc.User
 	// shares are loaded into this
 	shares map[string]*Share
 }
 
 // Start serving.
-func (ws *WebServer) Start() {
+func (ws *Server) Start() {
 	ws.Lock()
 	defer ws.Unlock()
 
-	addr := net.JoinHostPort(ws.ip, ws.port)
+	addr := net.JoinHostPort(ws.IP, ws.Port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		ws.E("Listener error: %s", err.Error())
@@ -61,7 +68,7 @@ func (ws *WebServer) Start() {
 	ws.Add(1)
 	ws.L("Starting web server on http://%s", addr)
 	go func() {
-		ws.Handler = ws.web
+		ws.Handler = ws.Web
 		err = ws.Serve(listener)
 
 		if err != nil && err != http.ErrServerClosed {
@@ -75,7 +82,7 @@ func (ws *WebServer) Start() {
 }
 
 // Stop serving.
-func (ws *WebServer) Stop() {
+func (ws *Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	err := ws.Shutdown(ctx)
@@ -88,7 +95,7 @@ func (ws *WebServer) Stop() {
 	// ws.db.Close()
 }
 
-func (ws *WebServer) wout(w http.ResponseWriter, s string) {
+func (ws *Server) wout(w http.ResponseWriter, s string) {
 	n, err := w.Write([]byte(s))
 	if err != nil {
 		ws.E("Error: wrote %d bytes: %s", n, err.Error())

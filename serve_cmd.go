@@ -4,7 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Urethramancer/colossus/osenv"
+	"github.com/Urethramancer/colossus/internal/osenv"
+	"github.com/Urethramancer/colossus/internal/web"
 	"github.com/Urethramancer/daemon"
 	"github.com/Urethramancer/signor/env"
 	"github.com/Urethramancer/signor/log"
@@ -39,17 +40,17 @@ func (cmd *CmdServe) Run(in []string) error {
 		return errors.New(opt.ErrorUsage)
 	}
 
-	ws := &WebServer{}
-	ws.dbhost = osenv.Get("DBHOST", cmd.DBHost)
-	ws.dbport = osenv.Get("DBPORT", cmd.DBPort)
-	ws.dbname = osenv.Get("DBNAME", cmd.DBName)
-	ws.dbuser = osenv.Get("DBUSER", cmd.DBUser)
-	ws.dbpass = osenv.Get("DBPASS", cmd.DBPass)
-	ws.ssl = env.Get("DB_SSL", cmd.SSL)
+	ws := &web.Server{}
+	ws.DBHost = osenv.Get("DBHOST", cmd.DBHost)
+	ws.DBPort = osenv.Get("DBPORT", cmd.DBPort)
+	ws.DBName = osenv.Get("DBNAME", cmd.DBName)
+	ws.DBUser = osenv.Get("DBUSER", cmd.DBUser)
+	ws.DBPass = osenv.Get("DBPASS", cmd.DBPass)
+	ws.SSL = env.Get("DB_SSL", cmd.SSL)
 
-	ws.ip = osenv.Get("WEBIP", cmd.IP)
-	ws.port = osenv.Get("WEBPORT", cmd.Port)
-	ws.staticpath = osenv.Get("STATICPATH", cmd.Static)
+	ws.IP = osenv.Get("WEBIP", cmd.IP)
+	ws.Port = osenv.Get("WEBPORT", cmd.Port)
+	ws.StaticPath = osenv.Get("STATICPATH", cmd.Static)
 
 	ws.Logger = log.Default
 	ws.L = log.Default.TMsg
@@ -59,41 +60,38 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.ReadTimeout = time.Second * 10
 	ws.WriteTimeout = time.Second * 10
 
-	ws.api = chi.NewRouter()
-	ws.api.Use(
+	ws.API = chi.NewRouter()
+	ws.API.Use(
 		middleware.NoCache,
-		addCORS,
+		web.AddCORS,
 		middleware.Timeout(time.Second*10),
 	)
-	ws.api.NotFound(apinotfound)
-	ws.api.Route("/", func(r chi.Router) {
-		r.Options("/", preflight)
+	ws.API.NotFound(ws.APInotfound)
+	ws.API.Route("/", func(r chi.Router) {
+		r.Options("/", web.Preflight)
 	})
 
-	ws.share = chi.NewRouter()
-	ws.share.Use(
+	ws.Share = chi.NewRouter()
+	ws.Share.Use(
 		middleware.NoCache,
 		middleware.RealIP,
 		middleware.RequestID,
-		ws.addLogger,
+		ws.AddLogger,
 	)
-	// ws.share.Route("/", func(r chi.Router) {
-	// 	r.Get("/", ws.files)
-	// })
 
-	ws.web = chi.NewRouter()
-	ws.web.Use(
+	ws.Web = chi.NewRouter()
+	ws.Web.Use(
 		middleware.RealIP,
 		middleware.RequestID,
-		ws.addLogger,
-		addHTMLHeaders,
+		ws.AddLogger,
+		web.AddHTMLHeaders,
 	)
 
-	ws.web.Get("/api", ws.api.ServeHTTP)
-	ws.web.Get("/files", ws.files)
-	ws.web.Get("/", ws.static)
-	ws.web.Route("/{page}", func(r chi.Router) {
-		r.Get("/*", ws.static)
+	ws.Web.Get("/api", ws.API.ServeHTTP)
+	ws.Web.Get("/files", ws.Files)
+	ws.Web.Get("/", ws.Static)
+	ws.Web.Route("/{page}", func(r chi.Router) {
+		r.Get("/*", ws.Static)
 	})
 
 	ws.Start()

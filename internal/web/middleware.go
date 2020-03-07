@@ -1,10 +1,10 @@
-package main
+package web
 
 import (
 	"net/http"
 )
 
-func addJSONHeaders(next http.Handler) http.Handler {
+func AddJSONHeaders(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 		next.ServeHTTP(w, r)
@@ -12,7 +12,7 @@ func addJSONHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func addHTMLHeaders(next http.Handler) http.Handler {
+func AddHTMLHeaders(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 		next.ServeHTTP(w, r)
@@ -20,7 +20,7 @@ func addHTMLHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func addCORS(next http.Handler) http.Handler {
+func AddCORS(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
@@ -38,7 +38,8 @@ func addSecureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func (ws *WebServer) addLogger(next http.Handler) http.Handler {
+// AddLogger sets a function to create access log lines.
+func (ws *Server) AddLogger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			ws.Logger.TMsg("client %s %s %s", r.RemoteAddr, r.Method, r.RequestURI)

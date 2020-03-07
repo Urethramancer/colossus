@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"fmt"
@@ -11,16 +11,16 @@ const (
 	errorBadPassword  = "Bad or easily guessable password."
 )
 
-func apierror(w http.ResponseWriter, msg string, code int) {
+func (ws *Server) apierror(w http.ResponseWriter, msg string, code int) {
 	s := fmt.Sprintf("{\"message\":\"%s\",\"ok\":false}", msg)
 	w.Write([]byte(s))
 }
 
-func apinotfound(w http.ResponseWriter, r *http.Request) {
-	apierror(w, "Unknown endpoint.", 404)
+func (ws *Server) APInotfound(w http.ResponseWriter, r *http.Request) {
+	ws.apierror(w, "Unknown endpoint.", 404)
 }
 
-func preflight(w http.ResponseWriter, r *http.Request) {
+func Preflight(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST,GET")
 	w.Header().Set("Access-Control-Max-Age", "86400")
 	http.Error(w, "", 204)
