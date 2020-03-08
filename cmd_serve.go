@@ -29,6 +29,7 @@ type CmdServe struct {
 	IP      string `short:"i" long:"ip" help:"IP address to bind to." default:"127.0.0.1"`
 	Port    string `short:"w" long:"port" help:"Port to run on." default:"8000"`
 	Static  string `short:"S" long:"staticpath" help:"Path to static files." default:"static"`
+	Shared  string `short:"F" long:"sharepath" help:"Path to store shared files and folders." default:"shared"`
 	Domains string `short:"d" long:"domains" help:"Comma-separated list of domains to respond to."`
 }
 
@@ -42,6 +43,7 @@ func (cmd *CmdServe) Run(in []string) error {
 		osenv.Get("WEBIP", cmd.IP),
 		osenv.Get("WEBPORT", cmd.Port),
 		osenv.Get("STATICPATH", cmd.Static),
+		osenv.Get("SHAREPATH", cmd.Shared),
 	)
 
 	ws.SetDatabase(
