@@ -39,6 +39,7 @@ type Server struct {
 	port string
 	// staticpath is for files retrieved by the client (HTML, CSS, images, JS).
 	staticpath string
+	sharepath  string
 
 	// api endpoints
 	api *chi.Mux
@@ -54,11 +55,12 @@ type Server struct {
 }
 
 // New web server strcture is returned with the essentials filled in.
-func New(addr, p, sp string) *Server {
+func New(addr, p, static, shares string) *Server {
 	ws := &Server{
 		ip:         addr,
 		port:       p,
-		staticpath: sp,
+		staticpath: static,
+		sharepath:  shares,
 	}
 
 	// Logging
