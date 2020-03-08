@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/Urethramancer/colossus/internal/cfg"
 	"github.com/Urethramancer/colossus/internal/osenv"
 	"github.com/Urethramancer/colossus/internal/web"
 	"github.com/Urethramancer/daemon"
@@ -57,7 +58,11 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.WriteTimeout = time.Second * 10
 
 	ws.Start()
+	uq := cfg.StartUserWatcher(ws)
+	sq := cfg.StartShareWatcher(ws)
 	<-daemon.BreakChannel()
+	sq <- true
+	uq <- true
 	ws.Stop()
 	return nil
 }
