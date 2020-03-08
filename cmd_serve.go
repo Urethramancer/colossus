@@ -49,7 +49,7 @@ func (cmd *CmdServe) Run(in []string) error {
 		osenv.Get("DBNAME", cmd.DBName),
 		osenv.Get("DBUSER", cmd.DBUser),
 		osenv.Get("DBPASS", cmd.DBPass),
-		env.Get("DB_SSL", cmd.SSL),
+		env.Get("DBSSL", cmd.SSL),
 	)
 
 	ws.IdleTimeout = time.Second * 30
