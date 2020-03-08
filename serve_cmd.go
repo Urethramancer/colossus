@@ -8,10 +8,7 @@ import (
 	"github.com/Urethramancer/colossus/internal/web"
 	"github.com/Urethramancer/daemon"
 	"github.com/Urethramancer/signor/env"
-	"github.com/Urethramancer/signor/log"
 	"github.com/Urethramancer/signor/opt"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 )
 
 // CmdServe options.
@@ -40,59 +37,24 @@ func (cmd *CmdServe) Run(in []string) error {
 		return errors.New(opt.ErrorUsage)
 	}
 
-	ws := &web.Server{}
-	ws.DBHost = osenv.Get("DBHOST", cmd.DBHost)
-	ws.DBPort = osenv.Get("DBPORT", cmd.DBPort)
-	ws.DBName = osenv.Get("DBNAME", cmd.DBName)
-	ws.DBUser = osenv.Get("DBUSER", cmd.DBUser)
-	ws.DBPass = osenv.Get("DBPASS", cmd.DBPass)
-	ws.SSL = env.Get("DB_SSL", cmd.SSL)
+	ws := web.New(
+		osenv.Get("WEBIP", cmd.IP),
+		osenv.Get("WEBPORT", cmd.Port),
+		osenv.Get("STATICPATH", cmd.Static),
+	)
 
-	ws.IP = osenv.Get("WEBIP", cmd.IP)
-	ws.Port = osenv.Get("WEBPORT", cmd.Port)
-	ws.StaticPath = osenv.Get("STATICPATH", cmd.Static)
-
-	ws.Logger = log.Default
-	ws.L = log.Default.TMsg
-	ws.E = log.Default.TErr
+	ws.SetDatabase(
+		osenv.Get("DBHOST", cmd.DBHost),
+		osenv.Get("DBPORT", cmd.DBPort),
+		osenv.Get("DBNAME", cmd.DBName),
+		osenv.Get("DBUSER", cmd.DBUser),
+		osenv.Get("DBPASS", cmd.DBPass),
+		env.Get("DB_SSL", cmd.SSL),
+	)
 
 	ws.IdleTimeout = time.Second * 30
 	ws.ReadTimeout = time.Second * 10
 	ws.WriteTimeout = time.Second * 10
-
-	ws.API = chi.NewRouter()
-	ws.API.Use(
-		middleware.NoCache,
-		web.AddCORS,
-		middleware.Timeout(time.Second*10),
-	)
-	ws.API.NotFound(ws.APInotfound)
-	ws.API.Route("/", func(r chi.Router) {
-		r.Options("/", web.Preflight)
-	})
-
-	ws.Share = chi.NewRouter()
-	ws.Share.Use(
-		middleware.NoCache,
-		middleware.RealIP,
-		middleware.RequestID,
-		ws.AddLogger,
-	)
-
-	ws.Web = chi.NewRouter()
-	ws.Web.Use(
-		middleware.RealIP,
-		middleware.RequestID,
-		ws.AddLogger,
-		web.AddHTMLHeaders,
-	)
-
-	ws.Web.Get("/api", ws.API.ServeHTTP)
-	ws.Web.Get("/files", ws.Files)
-	ws.Web.Get("/", ws.Static)
-	ws.Web.Route("/{page}", func(r chi.Router) {
-		r.Get("/*", ws.Static)
-	})
 
 	ws.Start()
 	<-daemon.BreakChannel()

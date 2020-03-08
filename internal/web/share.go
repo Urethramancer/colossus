@@ -24,3 +24,24 @@ type Share struct {
 func (ws *Server) Files(w http.ResponseWriter, r *http.Request) {
 	ws.wout(w, "No files.")
 }
+
+// AddShare creates a file or directory share, wiht optional global password.
+func (ws *Server) AddShare(name, path, password string) {
+
+}
+
+// RemoveShare completely removes a share and its configuration file.
+func (ws *Server) RemoveShare(name string) {
+
+}
+
+// AddShareUser adds a user to a share, optionally with admin access.
+func (ws *Server) AddShareUsers(name string, admin bool) {
+	sh, ok := ws.shares[name]
+	if !ok {
+		ws.E("Unknown share '%s.", name)
+		return
+	}
+
+	sh.Users[name] = admin
+}

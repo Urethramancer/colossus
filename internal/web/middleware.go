@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func AddJSONHeaders(next http.Handler) http.Handler {
+func addJSONHeaders(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 		next.ServeHTTP(w, r)
@@ -12,7 +12,7 @@ func AddJSONHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func AddHTMLHeaders(next http.Handler) http.Handler {
+func addHTMLHeaders(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 		next.ServeHTTP(w, r)
@@ -20,7 +20,7 @@ func AddHTMLHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func AddCORS(next http.Handler) http.Handler {
+func addCORS(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
@@ -39,7 +39,7 @@ func addSecureHeaders(next http.Handler) http.Handler {
 }
 
 // AddLogger sets a function to create access log lines.
-func (ws *Server) AddLogger(next http.Handler) http.Handler {
+func (ws *Server) addLogger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			ws.Logger.TMsg("client %s %s %s", r.RemoteAddr, r.Method, r.RequestURI)

@@ -11,6 +11,7 @@ import (
 	"github.com/Urethramancer/colossus/internal/acc"
 	"github.com/Urethramancer/signor/log"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 // Server main structure.
@@ -20,31 +21,31 @@ type Server struct {
 	log.LogShortcuts
 	http.Server
 
-	// DBHost address.
-	DBHost string
-	// DBPort number.
-	DBPort string
-	// DBName to connect to.
-	DBName string
-	// DBUser to connect as.
-	DBUser string
-	// DBPass to authenticate with.
-	DBPass string
-	// SSL enabled or disabled.
-	SSL string
+	// address
+	dbhost string
+	// port number
+	dbport string
+	// name to connect to
+	dbname string
+	// user to connect as
+	dbuser string
+	// password to authenticate with
+	dbpass string
+	// SSL enabled or disabled
+	ssl string
 	// db     *anthropoi.DBM
 
-	IP   string
-	Port string
+	ip   string
+	port string
 	// staticpath is for files retrieved by the client (HTML, CSS, images, JS).
-	StaticPath string
+	staticpath string
 
 	// api endpoints
-	API *chi.Mux
+	api *chi.Mux
 	// web server root path
-	Web *chi.Mux
+	web *chi.Mux
 	// share folders and files
-	Share *chi.Mux
+	share *chi.Mux
 
 	// users are loaded into this
 	users map[string]*acc.User
@@ -52,12 +53,71 @@ type Server struct {
 	shares map[string]*Share
 }
 
+// New web server strcture is returned with the essentials filled in.
+func New(addr, p, sp string) *Server {
+	ws := &Server{
+		ip:         addr,
+		port:       p,
+		staticpath: sp,
+	}
+
+	// Logging
+	ws.Logger = log.Default
+	ws.L = log.Default.TMsg
+	ws.E = log.Default.TErr
+
+	// API middleware and preflight
+	ws.api = chi.NewRouter()
+	ws.api.Use(
+		middleware.NoCache,
+		addCORS,
+		middleware.RealIP,
+		middleware.Timeout(time.Second*10),
+	)
+	ws.api.NotFound(ws.apinotfound)
+	ws.api.Route("/", func(r chi.Router) {
+		r.Options("/", preflight)
+	})
+
+	// File share setup
+	ws.share = chi.NewRouter()
+	ws.share.Use(
+		middleware.NoCache,
+		middleware.RealIP,
+		middleware.RequestID,
+		ws.addLogger,
+	)
+
+	// HTTP middleware
+	ws.web = chi.NewRouter()
+	ws.web.Use(
+		middleware.RealIP,
+		middleware.RequestID,
+		ws.addLogger,
+		addHTMLHeaders,
+	)
+
+	ws.WebGet("/api", ws.api.ServeHTTP)
+	ws.WebGet("/files", ws.share.ServeHTTP)
+	ws.share.Route("/", func(r chi.Router) {
+		r.Get("/*", ws.Files)
+		ws.L("Added placeholder page for /files root page.")
+	})
+
+	ws.WebGet("/", ws.Static)
+	ws.WebGets("/{page}", func(r chi.Router) {
+		r.Get("/*", ws.Static)
+	})
+
+	return ws
+}
+
 // Start serving.
 func (ws *Server) Start() {
 	ws.Lock()
 	defer ws.Unlock()
 
-	addr := net.JoinHostPort(ws.IP, ws.Port)
+	addr := net.JoinHostPort(ws.ip, ws.port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		ws.E("Listener error: %s", err.Error())
@@ -68,7 +128,7 @@ func (ws *Server) Start() {
 	ws.Add(1)
 	ws.L("Starting web server on http://%s", addr)
 	go func() {
-		ws.Handler = ws.Web
+		ws.Handler = ws.web
 		err = ws.Serve(listener)
 
 		if err != nil && err != http.ErrServerClosed {
