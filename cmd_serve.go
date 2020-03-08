@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"path/filepath"
 	"time"
 
 	"github.com/Urethramancer/colossus/internal/cfg"
@@ -16,7 +17,7 @@ import (
 type CmdServe struct {
 	opt.DefaultHelp
 
-	ConfigPath string `short:"C" long:"configpath" help:"Path to configuration files." default:"config"`
+	DataPath string `short:"D" long:"configpath" help:"Path to user/share configuration files." default:"data"`
 	// Database options
 	DBHost string `short:"H" long:"dbhost" help:"Database host to connect to." default:"localhost"`
 	DBPort string `short:"p" long:"dbport" help:"Database port to connect to." default:"5432"`
@@ -26,11 +27,11 @@ type CmdServe struct {
 	SSL    string `short:"s" long:"ssl" help:"Require SSL to connect to the database." choices:"enable,disable" default:"disable"`
 
 	// Webserver options
-	IP      string `short:"i" long:"ip" help:"IP address to bind to." default:"127.0.0.1"`
-	Port    string `short:"w" long:"port" help:"Port to run on." default:"8000"`
-	Static  string `short:"S" long:"staticpath" help:"Path to static files." default:"static"`
-	Shared  string `short:"F" long:"sharepath" help:"Path to store shared files and folders." default:"shared"`
-	Domains string `short:"d" long:"domains" help:"Comma-separated list of domains to respond to."`
+	IP     string `short:"i" long:"ip" help:"IP address to bind to." default:"127.0.0.1"`
+	Port   string `short:"w" long:"port" help:"Port to run on." default:"8000"`
+	Static string `short:"S" long:"staticpath" help:"Path to static files." default:"static"`
+	Shared string `short:"F" long:"sharepath" help:"Path to store shared files and folders." default:"shared"`
+	// Domains string `short:"d" long:"domains" help:"Comma-separated list of domains to respond to."`
 }
 
 // Run serve
@@ -60,8 +61,11 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.WriteTimeout = time.Second * 10
 
 	ws.Start()
-	uq := cfg.StartUserWatcher(ws)
-	sq := cfg.StartShareWatcher(ws)
+	path := filepath.Join(cmd.DataPath, "users")
+	uq := cfg.StartUserWatcher(ws, path)
+
+	path = filepath.Join(cmd.DataPath, "shares")
+	sq := cfg.StartShareWatcher(ws, path)
 	<-daemon.BreakChannel()
 	sq <- true
 	uq <- true
