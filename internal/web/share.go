@@ -56,7 +56,18 @@ func (ws *Server) AddShare(name, path, password string) {
 
 // RemoveShare completely removes a share and its configuration file.
 func (ws *Server) RemoveShare(name string) {
+	sh, ok := ws.shares[name]
+	if !ok {
+		ws.E("Unknown share '%s.", name)
+		return
+	}
 
+	err := os.RemoveAll(sh.Path)
+	if err != nil {
+		ws.E("Error deleting '%s': %s", sh.Path, err.Error())
+	}
+
+	delete(ws.shares, name)
 }
 
 // AddShareUser adds a user to a share, optionally with admin access.
