@@ -2,7 +2,10 @@ package web
 
 import (
 	"net/http"
+	"os"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Share or file information.
@@ -27,7 +30,28 @@ func (ws *Server) Files(w http.ResponseWriter, r *http.Request) {
 
 // AddShare creates a file or directory share, wiht optional global password.
 func (ws *Server) AddShare(name, path, password string) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		ws.E("Error sharing '%s': %s", name, err.Error())
+		return
+	}
 
+	pw, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		ws.E("Error sharing:'%s': %s", err.Error())
+		return
+	}
+
+	sh := &Share{
+		Name:     name,
+		Path:     path,
+		Password: string(pw),
+		Created:  time.Now(),
+		Users:    make(map[string]bool),
+		Dir:      fi.IsDir(),
+	}
+
+	ws.shares[name] = sh
 }
 
 // RemoveShare completely removes a share and its configuration file.
