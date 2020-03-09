@@ -5,9 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Urethramancer/colossus/internal/cfg"
 	"github.com/Urethramancer/colossus/internal/osenv"
-	"github.com/Urethramancer/colossus/internal/web"
 	"github.com/Urethramancer/daemon"
 	"github.com/Urethramancer/signor/env"
 	"github.com/Urethramancer/signor/opt"
@@ -40,7 +38,7 @@ func (cmd *CmdServe) Run(in []string) error {
 		return errors.New(opt.ErrorUsage)
 	}
 
-	ws := web.New(
+	ws := NewServer(
 		osenv.Get("WEBIP", cmd.IP),
 		osenv.Get("WEBPORT", cmd.Port),
 		osenv.Get("STATICPATH", cmd.Static),
@@ -62,10 +60,10 @@ func (cmd *CmdServe) Run(in []string) error {
 
 	ws.Start()
 	path := filepath.Join(cmd.DataPath, "users")
-	uq := cfg.StartUserWatcher(ws, path)
+	uq := ws.startUserWatcher(path)
 
 	path = filepath.Join(cmd.DataPath, "shares")
-	sq := cfg.StartShareWatcher(ws, path)
+	sq := ws.startShareWatcher(path)
 	<-daemon.BreakChannel()
 	sq <- true
 	uq <- true

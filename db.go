@@ -1,4 +1,4 @@
-package web
+package main
 
 // SetDatabase sets the connection string of the database.
 func (ws *Server) SetDatabase(host, port, name, user, pass, ssl string) {

@@ -1,4 +1,4 @@
-package acc
+package main
 
 // User config.
 type User struct {

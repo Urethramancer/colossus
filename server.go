@@ -1,4 +1,4 @@
-package web
+package main
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Urethramancer/colossus/internal/acc"
 	"github.com/Urethramancer/signor/log"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -49,13 +48,13 @@ type Server struct {
 	share *chi.Mux
 
 	// users are loaded into this
-	users map[string]*acc.User
+	users map[string]*User
 	// shares are loaded into this
 	shares map[string]*Share
 }
 
 // New web server strcture is returned with the essentials filled in.
-func New(addr, p, static, shares string) *Server {
+func NewServer(addr, p, static, shares string) *Server {
 	ws := &Server{
 		ip:         addr,
 		port:       p,
