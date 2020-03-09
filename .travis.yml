@@ -9,6 +9,8 @@ cache:
         - $GOPATH/pkg
 
 install:
+    - go get github.com/fsnotify/fsnotify
     - go get github.com/go-chi/chi
     - go get github.com/Urethramancer/daemon
     - go get github.com/Urethramancer/signor
+    - go get golang.org/x/crypto/bcrypt
