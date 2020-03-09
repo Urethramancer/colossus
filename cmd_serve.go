@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"path/filepath"
 	"time"
 
 	"github.com/Urethramancer/colossus/internal/osenv"
@@ -41,6 +40,7 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws := NewServer(
 		osenv.Get("WEBIP", cmd.IP),
 		osenv.Get("WEBPORT", cmd.Port),
+		osenv.Get("DATAPATH", cmd.DataPath),
 		osenv.Get("STATICPATH", cmd.Static),
 		osenv.Get("SHAREPATH", cmd.Shared),
 	)
@@ -59,14 +59,7 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.WriteTimeout = time.Second * 10
 
 	ws.Start()
-	path := filepath.Join(cmd.DataPath, "users")
-	uq := ws.startUserWatcher(path)
-
-	path = filepath.Join(cmd.DataPath, "shares")
-	sq := ws.startShareWatcher(path)
 	<-daemon.BreakChannel()
-	sq <- true
-	uq <- true
 	ws.Stop()
 	return nil
 }

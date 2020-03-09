@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -34,8 +35,9 @@ type Server struct {
 	ssl string
 	// db     *anthropoi.DBM
 
-	ip   string
-	port string
+	ip       string
+	port     string
+	datapath string
 	// staticpath is for files retrieved by the client (HTML, CSS, images, JS).
 	staticpath string
 	sharepath  string
@@ -51,13 +53,17 @@ type Server struct {
 	users map[string]*User
 	// shares are loaded into this
 	shares map[string]*Share
+
+	userquit  chan bool
+	sharequit chan bool
 }
 
 // New web server strcture is returned with the essentials filled in.
-func NewServer(addr, p, static, shares string) *Server {
+func NewServer(addr, p, dp, static, shares string) *Server {
 	ws := &Server{
 		ip:         addr,
 		port:       p,
+		datapath:   dp,
 		staticpath: static,
 		sharepath:  shares,
 	}
@@ -129,12 +135,19 @@ func (ws *Server) Start() {
 	ws.Add(1)
 	ws.L("Starting web server on http://%s", addr)
 	go func() {
+		path := filepath.Join(ws.datapath, "users")
+		ws.startUserWatcher(path)
+		path = filepath.Join(ws.datapath, "shares")
+		ws.startShareWatcher(path)
+
 		ws.Handler = ws.web
 		err = ws.Serve(listener)
 
 		if err != nil && err != http.ErrServerClosed {
 			ws.E("Error running server: %s", err.Error())
 			// ws.db.Close()
+			ws.userquit <- true
+			ws.sharequit <- true
 			os.Exit(2)
 		}
 		ws.L("Stopped web server.")
@@ -144,6 +157,8 @@ func (ws *Server) Start() {
 
 // Stop serving.
 func (ws *Server) Stop() {
+	ws.userquit <- true
+	ws.sharequit <- true
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	err := ws.Shutdown(ctx)
