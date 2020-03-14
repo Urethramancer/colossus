@@ -4,7 +4,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/Urethramancer/colossus/internal/ext"
 	"github.com/Urethramancer/colossus/internal/osenv"
+	"github.com/Urethramancer/colossus/internal/srv"
 	"github.com/Urethramancer/daemon"
 	"github.com/Urethramancer/signor/env"
 	"github.com/Urethramancer/signor/opt"
@@ -28,7 +30,6 @@ type CmdServe struct {
 	Port   string `short:"w" long:"port" help:"Port to run on." default:"8000"`
 	Static string `short:"S" long:"staticpath" help:"Path to static files." default:"static"`
 	Shared string `short:"F" long:"sharepath" help:"Path to store shared files and folders." default:"shared"`
-	// Domains string `short:"d" long:"domains" help:"Comma-separated list of domains to respond to."`
 }
 
 // Run serve
@@ -37,7 +38,7 @@ func (cmd *CmdServe) Run(in []string) error {
 		return errors.New(opt.ErrorUsage)
 	}
 
-	ws := NewServer(
+	ws := srv.New(
 		osenv.Get("WEBIP", cmd.IP),
 		osenv.Get("WEBPORT", cmd.Port),
 		osenv.Get("DATAPATH", cmd.DataPath),
@@ -57,6 +58,12 @@ func (cmd *CmdServe) Run(in []string) error {
 	ws.IdleTimeout = time.Second * 30
 	ws.ReadTimeout = time.Second * 10
 	ws.WriteTimeout = time.Second * 10
+
+	list := ext.GetExtensions()
+	for k, v := range list {
+		ws.WebGets(v.Pattern(), v.Routes)
+		ws.L("Extension '%s' added with pattern '%s'.", k, v.Pattern())
+	}
 
 	ws.Start()
 	<-daemon.BreakChannel()

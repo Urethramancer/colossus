@@ -1,4 +1,4 @@
-package main
+package srv
 
 import (
 	"context"
@@ -59,7 +59,7 @@ type Server struct {
 }
 
 // New web server strcture is returned with the essentials filled in.
-func NewServer(addr, p, dp, static, shares string) *Server {
+func New(addr, p, dp, static, shares string) *Server {
 	ws := &Server{
 		ip:         addr,
 		port:       p,

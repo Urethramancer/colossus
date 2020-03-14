@@ -1,4 +1,4 @@
-package main
+package srv
 
 // User config.
 type User struct {
