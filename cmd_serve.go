@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"path/filepath"
 	"time"
 
 	"github.com/Urethramancer/colossus/internal/ext"
@@ -16,7 +17,7 @@ import (
 type CmdServe struct {
 	opt.DefaultHelp
 
-	DataPath string `short:"D" long:"configpath" help:"Path to user/share configuration files." default:"data"`
+	DataPath string `short:"D" long:"configpath" help:"Path to configuration file directory." default:"data"`
 	// Database options
 	DBHost string `short:"H" long:"dbhost" help:"Database host to connect to." default:"localhost"`
 	DBPort string `short:"p" long:"dbport" help:"Database port to connect to." default:"5432"`
@@ -63,6 +64,8 @@ func (cmd *CmdServe) Run(in []string) error {
 	for k, v := range list {
 		ws.WebGets(v.Pattern(), v.Routes)
 		ws.L("Extension '%s' added with pattern '%s'.", k, v.Pattern())
+		path := filepath.Join(cmd.DataPath, k)
+		v.LoadConfig(path)
 	}
 
 	ws.Start()

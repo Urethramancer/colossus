@@ -8,6 +8,9 @@ import (
 type Extension interface {
 	// Name must be unique.
 	Name() string
+	// LoadConfig is called with the path to a configuration directory
+	// containing the extension's config files.
+	LoadConfig(string) error
 	// Pattern to hang Routes on.
 	Pattern() string
 	// Routes has to set up all routes.

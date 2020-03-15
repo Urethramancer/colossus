@@ -2,23 +2,44 @@
 
 package ext
 
-import (
-	"fmt"
-	"net/http"
+// This is an example extension.
 
+import (
+	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/Urethramancer/signor/files"
+	"github.com/Urethramancer/signor/log"
 	"github.com/go-chi/chi"
 )
 
 func init() {
 	ex := &blank{}
+	ex.L = log.Default.TMsg
+	ex.E = log.Default.TErr
 	RegisterExtension(ex)
 }
 
 type blank struct {
+	log.LogShortcuts
+	cfgpath string
 }
 
 func (ex blank) Name() string {
 	return "blank"
+}
+
+func (ex *blank) LoadConfig(path string) error {
+	ex.cfgpath = path
+	err := files.EnsureDirExists(path)
+	if err != nil {
+		return os.ErrExist
+	}
+
+	fn := filepath.Join(path, "blank.json")
+	ex.L("blank: Loading config '%s'.", fn)
+	return nil
 }
 
 func (ex *blank) Pattern() string {
@@ -37,6 +58,6 @@ func (ex *blank) blankHandler(w http.ResponseWriter, r *http.Request) {
 func (ex *blank) o(w http.ResponseWriter, s string) {
 	n, err := w.Write([]byte(s))
 	if err != nil {
-		fmt.Printf("Error: wrote %d bytes: %s\n", n, err.Error())
+		ex.E("Error: wrote %d bytes: %s\n", n, err.Error())
 	}
 }
