@@ -21,26 +21,28 @@ type Server struct {
 	log.LogShortcuts
 	http.Server
 
+	settings map[string]string
+
 	// address
-	dbhost string
+	DBHost string
 	// port number
-	dbport string
+	DBPort string
 	// name to connect to
-	dbname string
+	DBName string
 	// user to connect as
-	dbuser string
+	DBUser string
 	// password to authenticate with
-	dbpass string
+	DBPass string
 	// SSL enabled or disabled
-	ssl string
+	SSL string
 	// db     *anthropoi.DBM
 
-	ip       string
-	port     string
-	datapath string
+	IP       string
+	Port     string
+	Datapath string
 	// staticpath is for files retrieved by the client (HTML, CSS, images, JS).
-	staticpath string
-	sharepath  string
+	StaticPath string
+	SharePath  string
 
 	// api endpoints
 	api *chi.Mux
@@ -59,13 +61,11 @@ type Server struct {
 }
 
 // New web server strcture is returned with the essentials filled in.
-func New(addr, p, dp, static, shares string) *Server {
-	ws := &Server{
-		ip:         addr,
-		port:       p,
-		datapath:   dp,
-		staticpath: static,
-		sharepath:  shares,
+// func New(addr, p, dp, static, shares string) *Server {
+func New(options ...func(*Server)) *Server {
+	ws := &Server{settings: make(map[string]string)}
+	for _, o := range options {
+		o(ws)
 	}
 
 	// Logging
@@ -119,12 +119,42 @@ func New(addr, p, dp, static, shares string) *Server {
 	return ws
 }
 
+// Set variable.
+func (ws *Server) Set(k, v string) {
+	ws.settings[k] = v
+}
+
+// Get variable.
+func (ws *Server) Get(k string) string {
+	v, ok := ws.settings[k]
+	if ok {
+		println("Got " + k + ":" + v)
+		return v
+	}
+
+	println("Didn't get " + k)
+	switch k {
+	case ENVHOST:
+		return "0.0.0.0"
+	case ENVPORT:
+		return "8000"
+	case ENVDATA:
+		return "data"
+	case ENVSTATIC:
+		return "static"
+	case ENVSHARE:
+		return "share"
+	}
+
+	return ""
+}
+
 // Start serving.
 func (ws *Server) Start() {
 	ws.Lock()
 	defer ws.Unlock()
 
-	addr := net.JoinHostPort(ws.ip, ws.port)
+	addr := net.JoinHostPort(ws.Get(ENVHOST), ws.Get(ENVPORT))
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		ws.E("Listener error: %s", err.Error())
@@ -135,9 +165,9 @@ func (ws *Server) Start() {
 	ws.Add(1)
 	ws.L("Starting web server on http://%s", addr)
 	go func() {
-		path := filepath.Join(ws.datapath, "users")
+		path := filepath.Join(ws.Get(ENVDATA), "users")
 		ws.startUserWatcher(path)
-		path = filepath.Join(ws.datapath, "shares")
+		path = filepath.Join(ws.Get(ENVSHARE), "share")
 		ws.startShareWatcher(path)
 
 		ws.Handler = ws.web
