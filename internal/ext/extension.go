@@ -1,6 +1,8 @@
 package ext
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi"
 )
 
@@ -33,4 +35,8 @@ func RegisterExtension(ex Extension) error {
 // GetExtensions returns a map of activated extensions.
 func GetExtensions() map[string]Extension {
 	return extensions
+}
+
+func wo(w http.ResponseWriter, s string) {
+	w.Write([]byte(s))
 }
