@@ -17,11 +17,11 @@ func (ws *Server) apierror(w http.ResponseWriter, msg string, code int) {
 }
 
 func (ws *Server) apinotfound(w http.ResponseWriter, r *http.Request) {
+	println("apinotfound()")
 	ws.apierror(w, "Unknown endpoint.", 404)
 }
 
-func preflight(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Methods", "POST,GET")
-	w.Header().Set("Access-Control-Max-Age", "86400")
-	http.Error(w, "", 204)
+func (ep *Server) apiRootHandler(w http.ResponseWriter, r *http.Request) {
+	println("rootHandler()")
+	w.Write([]byte("Insert docs here."))
 }
