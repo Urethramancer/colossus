@@ -2,8 +2,10 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/Urethramancer/colossus/internal/ext"
 	"github.com/Urethramancer/colossus/internal/srv"
 	"github.com/Urethramancer/daemon"
 )
@@ -30,14 +32,14 @@ func main() {
 	ws.ReadTimeout = time.Second * 10
 	ws.WriteTimeout = time.Second * 10
 
-	// list := ext.GetExtensions()
+	list := ext.GetExtensions()
 
-	// for k, v := range list {
-	// 	ws.WebGets(v.Pattern(), v.Routes)
-	// 	ws.L("Extension '%s' added with pattern '%s'.", k, v.Pattern())
-	// 	path := filepath.Join(datapath, k)
-	// 	v.LoadConfig(path)
-	// }
+	for k, v := range list {
+		ws.WebGets(v.Pattern(), v.Routes)
+		ws.L("Extension '%s' added with pattern '%s'.", k, v.Pattern())
+		path := filepath.Join(os.Getenv(srv.ENVDATA), k)
+		v.LoadConfig(path)
+	}
 
 	ws.Start()
 	<-daemon.BreakChannel()
