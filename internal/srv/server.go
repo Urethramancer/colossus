@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Urethramancer/colossus/internal/ext"
+	"github.com/Urethramancer/colossus/mid"
 	"github.com/Urethramancer/signor/log"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -73,18 +75,14 @@ func New(options ...func(*Server)) *Server {
 	ws.L = log.Default.TMsg
 	ws.E = log.Default.TErr
 
-	// API middleware and preflight
-	ws.api = chi.NewRouter()
-	ws.api.Use(
-		middleware.NoCache,
-		addCORS,
+	// HTTP middleware and routing (required by everything else)
+	ws.web = chi.NewRouter()
+	ws.web.Use(
 		middleware.RealIP,
-		middleware.Timeout(time.Second*10),
+		middleware.RequestID,
+		ws.addLogger,
+		mid.AddHTMLHeaders,
 	)
-	ws.api.NotFound(ws.apinotfound)
-	ws.api.Route("/", func(r chi.Router) {
-		r.Options("/", preflight)
-	})
 
 	// File share setup
 	ws.share = chi.NewRouter()
@@ -95,25 +93,37 @@ func New(options ...func(*Server)) *Server {
 		ws.addLogger,
 	)
 
-	// HTTP middleware
-	ws.web = chi.NewRouter()
-	ws.web.Use(
-		middleware.RealIP,
-		middleware.RequestID,
-		ws.addLogger,
-		addHTMLHeaders,
-	)
-
-	ws.WebGet("/api", ws.api.ServeHTTP)
 	ws.WebGet("/files", ws.share.ServeHTTP)
 	ws.share.Route("/", func(r chi.Router) {
 		r.Get("/*", ws.Files)
 		ws.L("Added placeholder page for /files root page.")
 	})
 
+	// API setup from extensions
+	// ws.WebGet("/api", ws.api.ServeHTTP)
+	ws.web.Route("/api", func(r chi.Router) {
+		list := ext.GetEndpoints()
+		// API middleware and preflight
+		r.Use(
+			middleware.NoCache,
+			middleware.RealIP,
+			mid.AddCORS,
+			middleware.Timeout(time.Second*10),
+		)
+		r.NotFound(ws.apinotfound)
+		r.Options("/", mid.Preflight)
+		r.Get("/", ws.apiRootHandler)
+		for _, ep := range list {
+			r.Route(ep.Base(), ep.Routes)
+			ws.L("Added /api%s routes.", ep.Base())
+		}
+	})
+
+	// Static pages (shortest route added last)
 	ws.WebGet("/", ws.Static)
 	ws.WebGets("/{page}", func(r chi.Router) {
 		r.Get("/*", ws.Static)
+		r.Options("/", mid.Preflight)
 	})
 
 	return ws
@@ -128,11 +138,9 @@ func (ws *Server) Set(k, v string) {
 func (ws *Server) Get(k string) string {
 	v, ok := ws.settings[k]
 	if ok {
-		println("Got " + k + ":" + v)
 		return v
 	}
 
-	println("Didn't get " + k)
 	switch k {
 	case ENVHOST:
 		return "0.0.0.0"
