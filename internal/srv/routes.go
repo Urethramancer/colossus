@@ -6,10 +6,6 @@ import (
 	"github.com/go-chi/chi"
 )
 
-func (ws *Server) APIGet() {
-
-}
-
 // WebGet adds a GET route matching the specified pattern.
 func (ws *Server) WebGet(pattern string, handler http.HandlerFunc) {
 	ws.web.Get(pattern, handler)
