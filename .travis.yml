@@ -14,3 +14,4 @@ install:
     - go get github.com/Urethramancer/daemon
     - go get github.com/Urethramancer/signor
     - go get golang.org/x/crypto/bcrypt
+    - go get github.com/lib/pq
