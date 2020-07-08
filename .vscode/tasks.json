@@ -7,10 +7,7 @@
 			"label": "Build Release",
 			"command": "go",
 			"args": ["build", "-ldflags", "\"-w -s\"", "-tags", "allext"],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
+			"group": "build",
 			"presentation": {
 				"echo": true,
 				"reveal": "silent",
@@ -24,7 +21,10 @@
 			"label": "Build Debug",
 			"command": "go",
 			"args": ["build", "-tags", "allext"],
-			"group": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 			"presentation": {
 				"echo": true,
 				"reveal": "silent",

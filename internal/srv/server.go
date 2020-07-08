@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Urethramancer/colossus/internal/ext"
+	"github.com/Urethramancer/colossus/internal/settings"
 	"github.com/Urethramancer/colossus/mid"
 	"github.com/Urethramancer/signor/log"
 	"github.com/go-chi/chi"
@@ -23,21 +24,7 @@ type Server struct {
 	log.LogShortcuts
 	http.Server
 
-	settings map[string]string
-
-	// address
-	DBHost string
-	// port number
-	DBPort string
-	// name to connect to
-	DBName string
-	// user to connect as
-	DBUser string
-	// password to authenticate with
-	DBPass string
-	// SSL enabled or disabled
-	SSL string
-	// db     *anthropoi.DBM
+	settings.Settings
 
 	IP       string
 	Port     string
@@ -65,7 +52,16 @@ type Server struct {
 // New web server strcture is returned with the essentials filled in.
 // func New(addr, p, dp, static, shares string) *Server {
 func New(options ...func(*Server)) *Server {
-	ws := &Server{settings: make(map[string]string)}
+	ws := &Server{}
+
+	ws.InitVars(map[string]string{
+		ENVHOST:   "0.0.0.0",
+		ENVPORT:   "8000",
+		ENVDATA:   "data",
+		ENVSTATIC: "static",
+		ENVSHARE:  "share",
+	})
+
 	for _, o := range options {
 		o(ws)
 	}
@@ -127,34 +123,6 @@ func New(options ...func(*Server)) *Server {
 	})
 
 	return ws
-}
-
-// Set variable.
-func (ws *Server) Set(k, v string) {
-	ws.settings[k] = v
-}
-
-// Get variable.
-func (ws *Server) Get(k string) string {
-	v, ok := ws.settings[k]
-	if ok {
-		return v
-	}
-
-	switch k {
-	case ENVHOST:
-		return "0.0.0.0"
-	case ENVPORT:
-		return "8000"
-	case ENVDATA:
-		return "data"
-	case ENVSTATIC:
-		return "static"
-	case ENVSHARE:
-		return "share"
-	}
-
-	return ""
 }
 
 // Start serving.

@@ -19,7 +19,7 @@ func (ws *Server) Static(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ws *Server) ServeFile(w http.ResponseWriter, r *http.Request, name string) {
-	fn := filepath.Join(ws.settings[ENVSTATIC], name)
+	fn := filepath.Join(ws.Get(ENVSTATIC), name)
 	f, err := os.Open(fn)
 	if err != nil {
 		http.NotFound(w, r)

@@ -1,0 +1,10 @@
+package accounts
+
+const (
+	ENVDBHOST = "DBHOST"
+	ENVDBPORT = "DBPORT"
+	ENVDBNAME = "DBNAME"
+	ENVDBUSER = "DBUSER"
+	ENVDBPASS = "DBPASS"
+	ENVDBSSL  = "DBSSL"
+)
