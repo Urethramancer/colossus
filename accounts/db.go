@@ -44,6 +44,7 @@ CREATE TABLE public.users
     password character varying(60) COLLATE pg_catalog."default" NOT NULL,
     fullname character varying(200) COLLATE pg_catalog."default",
     admin boolean NOT NULL DEFAULT false,
+    mustchange boolean NOT NULL DEFAULT false,
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 

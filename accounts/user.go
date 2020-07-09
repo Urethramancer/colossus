@@ -24,6 +24,8 @@ type User struct {
 	Fullname string
 	// Admin is true if this user is a server administrator.
 	Admin bool
+	// MustChange password on next login.
+	MustChange bool
 }
 
 var validchars = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#_-.,")
@@ -79,15 +81,15 @@ func (m *Manager) CreateUser(name, email, password string) (int64, error) {
 
 // UpdateUser sets the user details for the user ID in the specified struct.
 func (m *Manager) UpdateUser(user *User) error {
-	_, err := m.Exec("UPDATE TABLE public.users SET name=$1,email=$2,password=$3,fullname=$4,admin=$5;",
-		user.Name, user.Email, user.Password, user.Fullname, user.Admin,
+	_, err := m.Exec("UPDATE TABLE public.users SET name=$1,email=$2,password=$3,fullname=$4,admin=$5,mustchange=$6;",
+		user.Name, user.Email, user.Password, user.Fullname, user.Admin, user.MustChange,
 	)
 	return err
 }
 
 // GetUsers gets up to max users.
 func (m *Manager) GetUsers(max int) ([]User, error) {
-	rows, err := m.Query("SELECT id,name,email,password,fullname,admin FROM public.users LIMIT $1;", max)
+	rows, err := m.Query("SELECT id,name,email,password,fullname,admin,mustchange FROM public.users LIMIT $1;", max)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +98,7 @@ func (m *Manager) GetUsers(max int) ([]User, error) {
 	list := []User{}
 	for rows.Next() {
 		u := User{}
-		err = rows.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Fullname, &u.Admin)
+		err = rows.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Fullname, &u.Admin, &u.MustChange)
 		if err != nil {
 			return nil, err
 		}
@@ -110,8 +112,8 @@ func (m *Manager) GetUsers(max int) ([]User, error) {
 // GetUser account.
 func (m *Manager) GetUser(name string) (*User, error) {
 	u := &User{}
-	err := m.QueryRow("SELECT id,name,email,password,fullname,admin WHERE name=$1;", name).Scan(
-		&u.ID, &u.Name, &u.Email, &u.Password, &u.Fullname, &u.Admin,
+	err := m.QueryRow("SELECT id,name,email,password,fullname,admin,mustchange WHERE name=$1;", name).Scan(
+		&u.ID, &u.Name, &u.Email, &u.Password, &u.Fullname, &u.Admin, &u.MustChange,
 	)
 	return u, err
 }
@@ -119,8 +121,8 @@ func (m *Manager) GetUser(name string) (*User, error) {
 // GetUserByID instead of name.
 func (m *Manager) GetUserByID(id int64) (*User, error) {
 	u := &User{}
-	err := m.QueryRow("SELECT id,name,email,password,fullname,admin WHERE id=$1;", id).Scan(
-		&u.ID, &u.Name, &u.Email, &u.Password, &u.Fullname, &u.Admin,
+	err := m.QueryRow("SELECT id,name,email,password,fullname,admin,mustchange WHERE id=$1;", id).Scan(
+		&u.ID, &u.Name, &u.Email, &u.Password, &u.Fullname, &u.Admin, &u.MustChange,
 	)
 	return u, err
 }
@@ -133,6 +135,17 @@ func (m *Manager) GetProfile(name, site string) (*Profile, error) {
 // GetProfileByID instead of name.
 func (m *Manager) GetProfileByID(id, site string) (*Profile, error) {
 	return nil, nil
+}
+
+// SetAMustchange makes it so the user must change password on next login.
+func (m *Manager) SetMustchange(userid int64, b bool) error {
+	u, err := m.GetUserByID(userid)
+	if err != nil {
+		return err
+	}
+
+	u.MustChange = b
+	return m.UpdateUser(u)
 }
 
 // SetAdmin sets superuser status for a user.
