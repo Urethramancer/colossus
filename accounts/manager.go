@@ -46,7 +46,6 @@ func NewManager(options ...func(*Manager)) (*Manager, error) {
 		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
 		m.Get(ENVDBHOST), m.Get(ENVDBPORT), m.Get(ENVDBNAME), m.Get(ENVDBUSER), m.Get(ENVDBPASS), m.Get(ENVDBSSL),
 	)
-	println(conn)
 	db, err := sql.Open("postgres", conn)
 	if err != nil {
 		return nil, err
@@ -57,6 +56,13 @@ func NewManager(options ...func(*Manager)) (*Manager, error) {
 	if err != nil {
 		db.Close()
 		return nil, err
+	}
+
+	if !m.CheckTables() {
+		err = m.CreateTables()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return m, nil

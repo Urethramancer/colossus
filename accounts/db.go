@@ -5,32 +5,32 @@ import "database/sql"
 const (
 	// Drop all tables, keys and sequences, then create fresh ones.
 	tablesql = `DROP TABLE IF EXISTS public.users CASCADE;
-	DROP TABLE IF EXISTS public.groups CASCADE;
-	DROP TABLE IF EXISTS public.sites CASCADE;
-	DROP TABLE IF EXISTS public.memberships CASCADE;
+DROP TABLE IF EXISTS public.groups CASCADE;
+DROP TABLE IF EXISTS public.sites CASCADE;
+DROP TABLE IF EXISTS public.memberships CASCADE;
 
-	CREATE SEQUENCE public.groups_id_seq
-    INCREMENT 1
-    START 1
-    MINVALUE 1
-    MAXVALUE 9223372036854775807
-    CACHE 1;
+CREATE SEQUENCE public.groups_id_seq
+INCREMENT 1
+START 1
+MINVALUE 1
+MAXVALUE 9223372036854775807
+CACHE 1;
 
-	CREATE SEQUENCE public.sites_id_seq
-    INCREMENT 1
-    START 1
-    MINVALUE 1
-    MAXVALUE 9223372036854775807
-	CACHE 1;
+CREATE SEQUENCE public.sites_id_seq
+INCREMENT 1
+START 1
+MINVALUE 1
+MAXVALUE 9223372036854775807
+CACHE 1;
 
-	CREATE SEQUENCE public.users_id_seq
-    INCREMENT 1
-    START 1
-    MINVALUE 1
-    MAXVALUE 9223372036854775807
-    CACHE 1;
+CREATE SEQUENCE public.users_id_seq
+INCREMENT 1
+START 1
+MINVALUE 1
+MAXVALUE 9223372036854775807
+CACHE 1;
 
-	CREATE TABLE public.users
+CREATE TABLE public.users
 (
     id bigint NOT NULL DEFAULT nextval('users_id_seq'::regclass),
     name character varying(100) COLLATE pg_catalog."default" NOT NULL,
@@ -39,14 +39,14 @@ const (
     last character varying(200) COLLATE pg_catalog."default",
     admin boolean NOT NULL DEFAULT false,
     CONSTRAINT users_pkey PRIMARY KEY (id)
-)
+);
 
 	CREATE TABLE public.groups
 (
     id bigint NOT NULL DEFAULT nextval('groups_id_seq'::regclass),
     name character varying(100) COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT groups_pkey PRIMARY KEY (id)
-)
+);
 
 	CREATE TABLE public.sites
 (
@@ -59,7 +59,7 @@ const (
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID
-)
+);
 
 	CREATE TABLE public.memberships
 (
@@ -77,7 +77,7 @@ const (
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID
-)
+);
 `
 
 	// Get all tables if the user has access to them.
@@ -99,5 +99,6 @@ func (m *Manager) CheckTables() bool {
 // The database must already exist, and the connecting user must have full read/write access to it.
 // This allows the account system to share a database with other subsytems.
 func (m *Manager) CreateTables() error {
-	return nil
+	_, err := m.Exec(tablesql)
+	return err
 }
