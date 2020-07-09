@@ -1,6 +1,8 @@
 package accounts
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 const (
 	// Drop all tables, keys and sequences, then create fresh ones.
@@ -86,13 +88,13 @@ CREATE TABLE public.users
 
 // CheckTables returns true if the required tables exist.
 func (m *Manager) CheckTables() bool {
-	var users, groups, sites, memberships sql.NullBool
+	var users, groups, sites, memberships sql.NullString
 	err := m.QueryRow(checktablesql).Scan(&users, &groups, &sites, &memberships)
 	if err != nil {
 		return false
 	}
 
-	return users.Bool && groups.Bool && sites.Bool && memberships.Bool
+	return users.String == "users" && groups.String == "groups" && sites.String == "sites" && memberships.String == "memberships"
 }
 
 // CreateTables creates the tables, keys and sequences.
