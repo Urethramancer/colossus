@@ -59,8 +59,19 @@ func main() {
 		getm(accounts.ENVDBSSL),
 	)
 	if err != nil {
-		ws.E("Error creating account manager: %s", err.Error())
+		ws.E("Error setting up account manager: %s", err.Error())
 		os.Exit(2)
+	}
+
+	users, err := m.GetUsers(10)
+	if err == nil && len(users) == 0 {
+		pw, err := m.CreateRootUser("admin", os.Getenv(accounts.ENVEMAIL))
+		if err != nil {
+			ws.E("Couldn't create initial admin user: %s", err.Error())
+			os.Exit(2)
+		}
+
+		ws.L("Superuser admin created with password %s", pw)
 	}
 
 	defer m.Close()
