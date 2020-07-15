@@ -179,3 +179,13 @@ func (m *Manager) IsAdmin(userid int64, site string) bool {
 func (m *Manager) IsSiteAdmin(userid int64, site string) bool {
 	return false
 }
+
+// VerifyPassword returns true if the supplied passsord is a match for the user.
+func (m *Manager) VerifyPassword(u *User, pw string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pw))
+	if err != nil {
+		return false
+	}
+
+	return true
+}
