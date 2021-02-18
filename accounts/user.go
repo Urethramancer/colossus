@@ -127,6 +127,10 @@ func (m *Manager) GetUserByID(id int64) (*User, error) {
 	return u, err
 }
 
+func (m *Manager) CreateProfile(p *Profile) error {
+	return nil
+}
+
 // GetProfile for a user/site combination.
 func (m *Manager) GetProfile(name, site string) (*Profile, error) {
 	return nil, nil
